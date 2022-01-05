@@ -2,8 +2,8 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
-
 import 'edit_image_screen.dart';
+import 'filter_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -50,5 +50,12 @@ class HomeScreen extends StatelessWidget {
       Navigator.of(context).pushReplacement(MaterialPageRoute(
           builder: (context) => EditImageScreen(image: photo)));
     }
+
+    // if (photo != null) {
+    //   Navigator.of(context).pushReplacement(MaterialPageRoute(
+    //       builder: (context) => FilterScreen(image: photo)));
+    // }
+
+
   }
 }

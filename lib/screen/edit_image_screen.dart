@@ -4,6 +4,9 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:image_cropper/image_cropper.dart';
+import 'package:path/path.dart';
+import 'package:photofilters/photofilters.dart';
+import 'package:image/image.dart' as imageLib;
 
 class EditImageScreen extends StatefulWidget {
   final XFile image;
@@ -15,7 +18,9 @@ class EditImageScreen extends StatefulWidget {
 
 class _EditImageScreenState extends State<EditImageScreen> {
   BuildContext? scaffoldContext;
-  File? croptedImage;
+  String? fileName;
+  List<Filter> filters = presetFiltersList;
+  File? editedImageFile;
 
   @override
   Widget build(BuildContext context) {
@@ -27,28 +32,26 @@ class _EditImageScreenState extends State<EditImageScreen> {
         body: Column(
           children: [
             Expanded(child: topWidget(widget.image)),
-            bottomWidget()
+            bottomWidget(context)
           ],
         ),
         );
   }
 
   Widget topWidget(XFile getImage) {
-
-    if(croptedImage == null){
+    if(editedImageFile == null){
       return Image.file(File(
         getImage.path,
       ));
     }else{
       return Image.file(
-        croptedImage!,
+        editedImageFile!,
       );
     }
 
-
   }
 
-  Widget bottomWidget() {
+  Widget bottomWidget(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
       decoration: const BoxDecoration(color: Colors.black12),
@@ -56,7 +59,9 @@ class _EditImageScreenState extends State<EditImageScreen> {
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
           ElevatedButton(
-            onPressed: () {},
+            onPressed: () {
+              filterImage(context, widget.image);
+            },
             style: ButtonStyle(
                 padding: MaterialStateProperty.all(const EdgeInsets.all(10))),
             child: Column(
@@ -100,11 +105,42 @@ class _EditImageScreenState extends State<EditImageScreen> {
     );
   }
 
+  Future filterImage(BuildContext context, XFile filterImage) async{
+
+    editedImageFile = File(filterImage.path);
+    fileName = basename(editedImageFile!.path);
+    var image = imageLib.decodeImage(await editedImageFile!.readAsBytes());
+    image = imageLib.copyResize(image!, width: 600);
+
+    Map imagefile = await Navigator.push(
+      context,
+        MaterialPageRoute(
+        builder: (context) => PhotoFilterSelector(
+          title: const Text("Photo Filter Example"),
+          image: image!,
+          filters: presetFiltersList,
+          filename: fileName!,
+          loader:const Center(child: CircularProgressIndicator()),
+          fit: BoxFit.contain,
+        ),
+      ),
+    );
+
+    if (imagefile.containsKey('image_filtered')) {
+      setState(() {
+        editedImageFile = imagefile['image_filtered'];
+      });
+      print(editedImageFile!.path);
+    }
+
+
+  }
+
 
   cropAllImage(XFile photo) async{
 
     File? croppedFile = await ImageCropper.cropImage(
-        sourcePath:croptedImage == null?  photo.path : croptedImage!.path,
+        sourcePath:editedImageFile == null?  photo.path : editedImageFile!.path,
         aspectRatioPresets: [
           CropAspectRatioPreset.square,
           CropAspectRatioPreset.ratio3x2,
@@ -126,7 +162,7 @@ class _EditImageScreenState extends State<EditImageScreen> {
     );
 
     setState(() {
-      croptedImage = croppedFile;
+      editedImageFile = croppedFile;
     });
 
 
